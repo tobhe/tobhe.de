@@ -1,0 +1,15 @@
+body {
+    position: absolute;
+    font-family: monospace, monospace;
+    font-size: 200%;
+    top: 30%;
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    background: #1e1f21;
+    color: #EEEFF1;
+}
+a:link { text-decoration: none; font-weight: bold; color: #F55; }
+a:visited { text-decoration: none; font-weight: bold; color: #F55; }
+a:active { text-decoration: none; font-weight: bold; color: #F55; }
+a:hover { text-decoration: none; color: #F55; }
