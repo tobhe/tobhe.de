@@ -9,6 +9,26 @@ body {
     background: #1e1f21;
     color: #EEEFF1;
 }
+
+body#keys {
+    top: auto;
+    position: relative;
+    text-align: left;
+    margin: auto;
+    max-width: 50ch;
+    padding: 3em 1em;
+    line-height: 1.75;
+    font-size: 1.25em;
+}
+
+#oldkeys {
+    color: #717171;
+}
+
+#links {
+    display: inline-block;
+}
+
 a:link { font-weight: bold; color: #F55; }
 a:visited { font-weight: bold; color: #F55; }
 a:active { font-weight: bold; color: #F55; }
