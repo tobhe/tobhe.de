@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="ascii">
+  <link rel="stylesheet" href="style.css">
+  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+</head>
+<body id="keys">
+
+<img src="lxd+openbsd.png" width=368 height=125/>
+
+<h1>OpenBSD in LXD</h1>
+
+<ol>
+	<li><a href="#top1">Creating the VM instance</a></li>
+	<li><a href="#top2">Installing OpenBSD</a></li>
+	<li><a href="#top3">Running OpenBSD</a></li>
+	<li><a href="#top4">Optional Setup</a></li>
+	<li><a href="#sources">Sources</a></li>
+</ol>
+
+<h2 id="top1">Creating the VM instance</h2>
+
+<p>
+First, we need to create a LXD instance for our OpenBSD virtual machine.
+There currently aren't any prebuilt cloud images so we start with an empty instance
+and install OpenBSD from the official USB installer image.
+
+<pre>
+$ lxc init openbsd --empty --vm -c limits.cpu=4 -c limits.memory=4GiB -c migration.stateful=true -c security.secureboot=false
+</pre>
+
+<p>
+LXD uses a default root disk size of 10 GiB.  If necessary, we can change the disk size using
+<a href="https://manpages.ubuntu.com/manpages/kinetic/en/man1/lxc-config.1.html">lxc-config(1)</a>.
+
+<pre>
+$ lxc config device override openbsd root size=20GiB size.state=4GiB
+</pre>
+
+<p>
+Next we need to make the OpenBSD installer disk available to the VM.
+Because there are no pre-built images we download the official OpenBSD installer from
+a public ftp mirror.
+A full list of mirrors is available at
+<a href="#openbsd-mirrors">[3]</a>.
+We can use
+<a href="https://manpages.ubuntu.com/manpages/kinetic/en/man1/wget.1.html">wget(1)</a>
+to fetch the OpenBSD 7.3 installer image for the x86_64 CPU architecture:
+
+<pre>
+$ wget https://ftp.openbsd.org/pub/OpenBSD/7.3/amd64/install73.img
+</pre>
+
+<p>
+Next we need to instruct LXD to mount the installer image as a disk in our virtual
+machine.
+Setting the boot priority to 10 makes sure that the installer is selected as the boot
+device on first boot.
+
+<pre>
+$ lxc config device add openbsd install disk source=/home/user/install73.img boot.priority=10
+</pre>
+
+<h2 id="top2">Installing OpenBSD</h2>
+
+<p>
+OpenBSD uses a text based installer, so a text console should be sufficient for the next steps.
+Alternatively <b>--console=vga</b> attaches a graphical console.
+
+<pre>
+$ lxc start openbsd --console
+</pre>
+
+<p>
+Before booting into the actual installer we are greeted with the OpenBSD bootloader
+command line
+<a href="https://man.openbsd.org/man8/amd64/boot.8">boot(8)</a>.
+
+<p>
+We need to manually configure the correct serial output device, otherwise the OS
+won't print any output to our attached text console.
+The <b>boot</b> command resumes booting the default entry.
+ 
+<pre>
+>> OpenBSD/amd64 BOOTX64 3.64
+boot> set tty com0
+boot> boot
+</pre>
+
+<p>
+Next we see the kernel boot log and finally we are dropped into the installer shell.
+To start a clean installation press <b>I</b> and answer the questions presented by the
+installer.
+
+<pre>
+Welcome to the OpenBSD/amd64 7.3 installation program.
+(I)nstall, (U)pgrade, (A)utoinstall or (S)hell?
+</pre>
+
+<p>
+Most answers will depend on your personal preference such as username, password
+initial X server setup, partitioning etc.
+If you aren't sure what to choose the default is usually a good choice.
+Make sure to change the default console to com0 and pick a reasonable baud rate.
+
+<pre>
+Change the default console to com0? [yes]
+Available speeds are: 9600 19200 38400 57600 115200.
+Which speed should com0 use? (or 'done') [9600] 115200
+</pre>
+
+<p>
+Once the installer is done you get the option to drop into a shell, halt or reboot
+the machine.
+Instead of rebooting, shut down the machine with <b>H</b>.
+
+<pre>
+CONGRATULATIONS! Your OpenBSD install has been successfully completed!
+
+When you login to your new system the first time, please read your mail
+using the 'mail' command.
+
+Exit to (S)hell, (H)alt or (R)eboot? [reboot] H
+</pre>
+
+<p>
+Once the machine is offline we need to detach the installer disk.
+After this the machine should be ready to boot into our newly installed system.
+
+<pre>
+$ lxc config device remove openbsd install
+</pre>
+
+<h2 id="top3">Running OpenBSD</h2>
+
+We can now start the new VM with lxc start.
+
+<pre>
+lxc start openbsd
+</pre>
+
+<p>
+OpenBSD currently does not support lxc-agent so we can't use the
+<a href="https://manpages.ubuntu.com/manpages/kinetic/en/man1/lxc-execute.1.html">lxc-execute(1)</a>
+command.
+Instead, you can either use a console or ssh to connect to your machine.
+
+<p>
+If you have set up ssh access in the installer dialog you can find your machine's
+IP with
+<a href="https://manpages.ubuntu.com/manpages/kinetic/en/man1/lxc-info.1.html">lxc-info(1)</a>
+and then connect via
+<a href="https://man.openbsd.org/ssh">ssh(1)</a>:
+
+<pre>
+$ lxc info openbsd | grep inet
+        inet:  10.46.11.244/24 (global)
+$ ssh user@10.46.11.244
+</pre>
+
+<p>
+If ssh is not available you can always attach a console to a running machine using
+<a href="https://manpages.ubuntu.com/manpages/kinetic/en/man1/lxc-console.1.html">lxc-console(1)</a>:
+
+<pre>
+$ lxc console openbsd
+To detach from the console, press: <ctrl>+a q
+
+OpenBSD/amd64 (foo.lxd) (tty00)
+
+login:
+</pre>
+
+<h2 id="top4">Optional Setup</h2>
+
+<p>
+If you are planning to use ssh you might want to setup a mdns service on your
+VM to use the machine's hostname instead of the IP address in your.
+A popular OpenBSD compatible implementation is <b>openmdns</b> which is available
+as a binary package.
+
+<pre>
+# pkg_add openmdns
+</pre>
+
+<p>
+Once you have installed the package you can find more information at
+<em>/usr/local/share/doc/pkg-readmes/openmdns</em>.
+For a simple configuration run:
+
+<pre>
+# echo "mdnsd_flags=vio0\nmulticast=YES" >> /etc/rc.conf.local
+# rcctl enable mdnsd
+# rcctl start mdnsd
+</pre>
+
+<p>
+Your machine should now be reachable from your LXD host via its hostname.
+
+<pre>
+$ ssh openbsd.local
+</pre>
+
+<hr>
+
+<h3 id="sources">Sources</h3>
+<a id=footnote href=https://www.youtube.com/watch?v=OeU2SUKV5sQ>[1] Youtube: BSD in a LXD VM</a>
+<br>
+<a id=footnote href=https://discuss.linuxcontainers.org/t/install-any-os-via-iso-in-a-virtual-machine-vm/9281>[2] Discourse: Install any OS via ISO in a Virtual machine</a>
+<br>
+<a name="openbsd-mirrors" id=footnote href=https://www.openbsd.org/ftp.html>[3] OpenBSD: Mirrors</a>
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+html {
+	max-width: 80ch;
+	padding: 3em 1em;
+	margin: auto;
+	line-height: 1.7;
+	font-size: min(max(1em, 1.3vw), 1.3em);
+}
+
+h1,h2,h3,h4,h5,h6 {
+  margin: 3em 0 1em;
+}
+
+p,ul,ol {
+  margin-top: 2em;
+  margin-bottom: 1em;
+  color: #1d1d1d;
+  font-family: sans-serif;
+}
+
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+pre {
+  background: #efeff3;
+  padding: 1em;
+  white-space: pre-wrap;
+}
+
+#footnote {
+  font-size: 0.75em;
+}
