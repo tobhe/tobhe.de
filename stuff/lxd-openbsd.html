@@ -7,7 +7,7 @@
 </head>
 <body id="keys">
 
-<img src="lxd+openbsd.png" width=368 height=125/>
+<img src="lxdx3openbsd.png" width=352 height=154/>
 
 <h1>OpenBSD in LXD</h1>
 
@@ -160,7 +160,7 @@ $ ssh user@10.46.11.244
 </pre>
 
 <p>
-If ssh is not available you can always attach a console to a running machine using
+If ssh is not available you can attach a console to a running machine using
 <a href="https://manpages.ubuntu.com/manpages/kinetic/en/man1/lxc-console.1.html">lxc-console(1)</a>:
 
 <pre>
@@ -175,17 +175,18 @@ login:
 <h2 id="top4">Optional Setup</h2>
 
 <p>
-If you are planning to use ssh you might want to setup a mdns service on your
-VM to use the machine's hostname instead of the IP address in your.
-A popular OpenBSD compatible implementation is <b>openmdns</b> which is available
-as a binary package.
+If you are planning to use ssh you might want to setup a mdns daemon on your
+VM to use the machine's hostname instead of the IP address when connecting
+via ssh.
+A popular OpenBSD compatible implementation is <b>openmdns</b> which is
+available as a binary package.
 
 <pre>
 # pkg_add openmdns
 </pre>
 
 <p>
-Once you have installed the package you can find more information at
+Once the package is installed, you can find more information at
 <em>/usr/local/share/doc/pkg-readmes/openmdns</em>.
 For a simple configuration run:
 
@@ -196,7 +197,7 @@ For a simple configuration run:
 </pre>
 
 <p>
-Your machine should now be reachable from your LXD host via its hostname.
+The machine should now be reachable from the LXD host via its hostname.
 
 <pre>
 $ ssh openbsd.local
