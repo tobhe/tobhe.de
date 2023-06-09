@@ -33,3 +33,22 @@ pre {
 #footnote {
   font-size: 0.75em;
 }
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #1e1f21;
+        color: #EEEFF1;
+    }
+
+    p,ul,ol {
+        color: #EEEFF1;
+    }
+
+    pre {
+        background: black;
+    }
+    a:link { color: #F55; }
+    a:visited { color: #F55; }
+    a:active { color: #F55; }
+    a:hover { color: #FBB; }
+}

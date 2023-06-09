@@ -2,12 +2,10 @@ body {
     position: absolute;
     font-family: monospace, monospace;
     font-size: 200%;
-    top: 30%;
+    top: 10%;
     text-align: center;
     width: 100%;
     margin: 0;
-    background: #1e1f21;
-    color: #EEEFF1;
 }
 
 body#keys {
@@ -27,9 +25,21 @@ body#keys {
 
 #links {
     display: inline-block;
+    text-align: left;
 }
 
-a:link { font-weight: bold; color: #F55; }
-a:visited { font-weight: bold; color: #F55; }
-a:active { font-weight: bold; color: #F55; }
-a:hover { color: #FBB; }
+a:link { font-weight: bold; }
+a:visited { font-weight: bold; }
+a:active { font-weight: bold; }
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #1e1f21;
+        color: #EEEFF1;
+    }
+
+    a:link { color: #F55; }
+    a:visited { color: #F55; }
+    a:active { color: #F55; }
+    a:hover { color: #FBB; }
+}
