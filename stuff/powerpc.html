@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="ascii">
+  <link rel="stylesheet" href="style.css">
+  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+</head>
+<body id="keys">
+
+<h1>PowerPC Compiler Internals</h1>
+
+<ol>
+	<li><a href="#top1">Stack Layout</a></li>
+	<li><a href="#sources">Sources</a></li>
+</ol>
+
+<h2 id="top1">Stack Layout</h2>
+
+<pre>
+   0 +=============+ <- sp
+     | back chain  |
+   4 +-------------+
+     |   LR area   |
+   8 +-------------+  -
+     |   spill     |  | 4 * narg
+     +-------------+  -
+     |   locals    |
+   . +-------------+
+     |   padding   |
+   . +-------------+
+     |   GP save   |
+     |    area     |
+   . +-------------+
+     |   FP save   |
+     |    area     |
+  sz +=============+ <- old sp
+     | back chain  |
+sz+4 +-------------+
+     |   LR save   |
+sz+8 +-------------+
+</pre>
+
+<p>
+The stack pointer is always 16-byte aligned and points to the first word of
+the lowest allocated stack frame.
+The first word of each stack frame contains the "Back chain" pointer, which
+points to the first word of the previous stack frame.
+<p>
+The function prologue is responsible for setting up a stack frame.
+It usually allocates the stack and creates the back chain pointer using
+the <b>stwu</b> instruction.
+<b>stwu %r1, -16(%r1)</b> will create a new 16-byte stack frame by subtracting
+16 from R1(SP) and saving the previous address at the new offset.
+The size of the stack frame depends on the number of local variables and
+function parameters used.
+If the function is not a leave, meaning it calls another function, it will also
+need to store its link register (LR) in the previous frame and restore it
+before returning.
+<p>
+The smallest possible stack frame is 16 bytes since it always needs at least
+4 byte for the 'back chain', another 4 bytes for the link register and is then
+rounded up to the next multiple of 16.
+
+
+<h2 id="top2">Code Generation</h2>
+
+<pre>
+int child(int a)
+{
+        return a + 1;
+}
+
+int parent(int a)
+{
+        return child(a);
+}
+
+</pre>
+<i>C example</i>
+
+<p>
+
+<pre>
+function w $child(w %a) {
+@start
+        %val =w add 1, %a
+        ret %val
+}
+
+function w $parent(w %a) {
+@start
+        %val =w call $child(w %a)
+        ret %val
+}
+</pre>
+<i>QBE IL</i>
+
+<p>
+
+<pre>
+00000000 <child>:
+   0:   94 21 ff f0     stwu    r1,-16(r1)
+   4:   93 e1 00 0c     stw     r31,12(r1)
+   8:   7c 3f 0b 78     mr      r31,r1
+   c:   90 7f 00 08     stw     r3,8(r31)
+  10:   80 7f 00 08     lwz     r3,8(r31)
+  14:   38 63 00 01     addi    r3,r3,1
+  18:   83 e1 00 0c     lwz     r31,12(r1)
+  1c:   38 21 00 10     addi    r1,r1,16
+  20:   4e 80 00 20     blr
+
+00000024 <parent>:
+  24:   7c 08 02 a6     mflr    r0
+  28:   94 21 ff f0     stwu    r1,-16(r1)
+  2c:   93 e1 00 0c     stw     r31,12(r1)
+  30:   90 01 00 14     stw     r0,20(r1)
+  34:   7c 3f 0b 78     mr      r31,r1
+  38:   90 7f 00 08     stw     r3,8(r31)
+  3c:   80 7f 00 08     lwz     r3,8(r31)
+  40:   48 00 00 01     bl      40 <parent+0x1c>
+  44:   80 01 00 14     lwz     r0,20(r1)
+  48:   83 e1 00 0c     lwz     r31,12(r1)
+  4c:   38 21 00 10     addi    r1,r1,16
+  50:   7c 08 03 a6     mtlr    r0
+  54:   4e 80 00 20     blr
+</pre>
+<i>clang output</i>
+
+<p>
+
+<pre>
+00000000 <child>:
+   0:   94 21 ff e0     stwu    r1,-32(r1)
+   4:   93 e1 00 1c     stw     r31,28(r1)
+   8:   7c 3f 0b 78     mr      r31,r1
+   c:   90 7f 00 08     stw     r3,8(r31)
+  10:   81 3f 00 08     lwz     r9,8(r31)
+  14:   39 29 00 01     addi    r9,r9,1
+  18:   7d 23 4b 78     mr      r3,r9
+  1c:   39 7f 00 20     addi    r11,r31,32
+  20:   83 eb ff fc     lwz     r31,-4(r11)
+  24:   7d 61 5b 78     mr      r1,r11
+  28:   4e 80 00 20     blr
+
+0000002c <parent>:
+  2c:   94 21 ff e0     stwu    r1,-32(r1)
+  30:   7c 08 02 a6     mflr    r0
+  34:   90 01 00 24     stw     r0,36(r1)
+  38:   93 e1 00 1c     stw     r31,28(r1)
+  3c:   7c 3f 0b 78     mr      r31,r1
+  40:   90 7f 00 08     stw     r3,8(r31)
+  44:   80 7f 00 08     lwz     r3,8(r31)
+  48:   48 00 00 01     bl      48 <parent+0x1c>
+  4c:   7c 69 1b 78     mr      r9,r3
+  50:   7d 23 4b 78     mr      r3,r9
+  54:   39 7f 00 20     addi    r11,r31,32
+  58:   80 0b 00 04     lwz     r0,4(r11)
+  5c:   7c 08 03 a6     mtlr    r0
+  60:   83 eb ff fc     lwz     r31,-4(r11)
+  64:   7d 61 5b 78     mr      r1,r11
+  68:   4e 80 00 20     blr
+</pre>
+<i>gcc output</i>
+
+<p>
+
+
+<h3 id="sources">Sources</h3>
+<a id=footnote href=https://https://openpowerfoundation.org/?resource_lib=power-isa-version-3-0>
+[1] Power Instruction Set Architecture, Version 3.0B
+</a>
+<br>
+<a id=footnote href=https://archive.org/details/powerpc-cwg>
+[2] PowerPC Compiler Writer's Guide, IBM
+</a>
+<br>
+<a id=footnote href=http://refspecs.linux-foundation.org/elf/elfspec_ppc.pdf>
+[3] SYSTEM V APPLICATION BINARY INTERFACE PowerPC Processor Supplement
+</a>
+
+</body>
+</html>
