@@ -39,6 +39,7 @@ sz+4 +-------------+
      |   LR save   |
 sz+8 +-------------+
 </pre>
+<i>A simple standard stack frame</i>
 
 <p>
 The stack pointer is always 16-byte aligned and points to the first word of
@@ -51,15 +52,15 @@ It usually allocates the stack and creates the back chain pointer using
 the <b>stwu</b> instruction.
 <b>stwu %r1, -16(%r1)</b> will create a new 16-byte stack frame by subtracting
 16 from R1(SP) and saving the previous address at the new offset.
-The size of the stack frame depends on the number of local variables and
+The size (sz) of the stack frame depends on the number of local variables and
 function parameters used.
-If the function is not a leave, meaning it calls another function, it will also
+If the function is not a leaf, meaning it calls another function, it will also
 need to store its link register (LR) in the previous frame and restore it
 before returning.
 <p>
-The smallest possible stack frame is 16 bytes since it always needs at least
-4 byte for the 'back chain', another 4 bytes for the link register and is then
-rounded up to the next multiple of 16.
+The smallest possible stack frame size is 16 bytes since it always needs at
+least 4 byte for the 'back chain', another 4 bytes for the link register and
+is then rounded up to the next multiple of 16.
 
 
 <h2 id="top2">Code Generation</h2>
