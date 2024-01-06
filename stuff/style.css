@@ -28,6 +28,7 @@ pre {
   background: #efeff3;
   padding: 1em;
   white-space: pre-wrap;
+  width: fit-content;
 }
 
 #footnote {
