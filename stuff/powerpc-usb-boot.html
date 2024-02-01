@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="ascii">
+  <link rel="stylesheet" href="style.css">
+  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+</head>
+<body id="keys">
+
+<h1>Booting OS X from USB on Apple PowerMacs</h1>
+
+<p>
+For scientific reasons I was recently forced to figure out how to install an
+older OS X version on my iBook G4.
+This is easy as long as you still know where your original installer DVD is,
+but if like me you are stuck with only an <b>.iso</b> backup there are really
+only two options:
+
+<ol>
+<li>
+Find or buy an expensive blank single-use dual layer DVD that can fit 8 GB
+</li>
+<li>
+Figure out to make Open Firmware boot the installer from USB
+</li>
+</ol>
+
+<p>
+While it sounds trivial today, I spent almost a day on getting the Mac OS X
+Leopard installer booting from USB on my newly acquired iBook G4.
+
+<p>
+There are plenty of guides and Youtube videos describing the process but not
+a single one of those fully worked for me.
+Here is a summary of how I got it working in the hopes it helps future me or
+anyone else who ended up here.
+
+<h2>Open Firmware Compatibility</h2>
+
+<p>
+Apple's OpenFirmware shipped on PowerMacs does in theory support USB booting but
+it is incredibly picky when it comes to accepting USB disks and very fragile
+in general. My first advice is: Don't give up too easily. If it doesn't work
+right away, try a combination of different USB drives and ports.
+
+<p>
+The best way to find out if a particular device is supported is to plug it in
+while the device is turned off, then power it on and hold
+<b>Option + Command + O + F</b>.
+This should boot you into the Open Firmware shell.
+From there, run:
+
+<pre>
+> probe-usb
+> dev / ls
+</pre>
+
+<p>
+to get a dump of the device topology.
+If the USB disk was detected it should show up as a <b>/disk</b> node under
+one of the USB port such as in:
+
+<pre>
+...
+  /usb@1a
+  /usb@1b
+  /usb@1b,1
+    /disk@1
+  /usb@1b,2
+...
+</pre>
+
+<p>
+No <b>/disk</b> node means you may have to try rerunning <b>probe-usb</b>, try a
+different USB drive or another port.
+
+<h2>Formatting</h2>
+
+<p>
+Once we have found a working drive we have to format our it to be bootable
+on Power Macs.
+We can either do this using the graphical Disk Utility or on the command line
+with
+<a href=https://www.unix.com/man-page/osx/8/diskutil/>diskutil(8)<a/>.
+For the sake of simplicity I will only document the second, especially because
+other than the GUI, the command line API has been pretty stable since at least
+OS X 10.5.
+
+<p>
+First, plug in your USB drive and find your disk ID using:
+
+<pre>
+% diskutil list
+...
+/dev/disk6 (external, physical):
+  #:                       TYPE NAME                    SIZE       IDENTIFIER
+...
+</pre>
+
+<p>
+Make sure the disk is unmounted or the next step will fail.
+
+<pre>
+% diskutil unmountDisk disk6
+</pre>
+
+<p>
+You need to format the disk using the APM partition scheme with a HFS+ file
+system partition to make it suitable for booting from Open Firmware.
+
+<pre>
+% diskutil partitionDisk disk6 APM HFS+ OSX 8G
+</pre>
+
+<p>
+I created a 8GB partition since that was enough to fit my OS X 10.5 installer
+image.
+
+<h2>Flashing</h2>
+
+<p>
+Now that the USB drive is technically ready to boot you need to get our iso
+on there.
+macOS really wants the iso to be mounted before restoring it to another disk.
+<a href="https://www.unix.com/man-page/osx/1/hdiutil/">hdiutil(1)</a>
+can be used to mount the iso file from the command line:
+
+<pre>
+% hdiutil mount ~/OSX_10_5_LEOPARD.iso 
+/dev/disk7          	Apple_partition_scheme
+/dev/disk7s1        	Apple_partition_map            	
+/dev/disk7s2        	Apple_Driver_ATAPI
+/dev/disk7s3        	Apple_HFS                      	/Volumes/Mac OS X Install DVD
+</pre>
+
+<p>
+Alternatively, double clicking the file in finder should also automatically
+mount it.
+Finally restore the <em>Mac OS X Installer</em> partition from the iso to your
+USB disk using <a href=https://www.unix.com/man-page/osx/8/asr>asr(8)</a>:
+
+<pre>
+# asr restore --source /dev/disk7s3 --target /dev/disk6s3 --erase
+</pre>
+
+<h2>Booting</h2>
+
+<p>
+Back to step one: make sure Open Firmware detects your USB drive using the
+methods documented above.
+
+<pre>
+> probe-usb
+> dev / ls
+</pre>
+
+<p>
+Once the drive shows up you can enter the magical USB boot command.
+
+<pre>
+> boot usb$DEV/disk:$PART,\\:tbxi
+</pre>
+
+<p>
+Where <b>$DEV</b> is the ID of the usb device (usually it is enough to just try
+0 and 1) and <b>$PART</b> is the disk partition.
+This is the same partition ID we used previously to restore the installer image
+to disk.
+
+<p>
+In my case the disk was <b>/dev/disk6s3</b> so this would be <b>3</b> (which
+also seems to be the default first actual partition when using APM). 
+
+<pre>
+> probe-usb
+> boot usb0/disk:3,\\:tbxi
+</pre>
+
+<p>
+If everything goes well, you will be greeted with a grey apple logo screen for
+a while before the actual Mac OS X installer pops up.
+
+<img src="powerbook-installer.png" alt="An iBook G4 booted into the Mac OS X Leopard installer">
+
+<p>
+PS: If anyone knows of a simpler way I would be happy to learn about it and update
+this guide.
+
+<footer>
+<hr>
+<a href=https://tobhe.de/stuff>Index</a>
+| Code:
+<a href=https://github.com/tobhe/tobhe.de>https://github.com/tobhe/tobhe.de</a>
+| Content under
+<a href=https://creativecommons.org/licenses/by/4.0/legalcode>CC-BY-4.0</a>
+</footer>
+
+</body>
+</html>
