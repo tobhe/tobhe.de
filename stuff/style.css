@@ -8,18 +8,20 @@ html {
 }
 
 h1,h2,h3,h4,h5,h6 {
-  margin: 3em 0 1em;
+  margin: 2em 0 1em;
 }
 
 p,ul,ol {
-  margin-top: 2em;
-  margin-bottom: 1em;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
   color: #1d1d1d;
   font-family: sans-serif;
 }
 
 img {
   display: block;
+  margin-top: 1em;
+  margin-bottom: 1em;
   margin-left: auto;
   margin-right: auto;
 }
@@ -27,6 +29,8 @@ img {
 pre {
   background: #efeff3;
   padding: 1em;
+  margin-left: 1em;
+  margin-right: 1em;
   white-space: pre-wrap;
   width: fit-content;
 }
