@@ -5,6 +5,9 @@ html {
 	font-family: monospace, monospace;
 	font-size: min(max(1em, 1.3vw), 1.5em);
 	line-height: 1.7;
+}
+
+body {
     color: #212121;
     background-color: #fafafa;
 }
