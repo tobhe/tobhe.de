@@ -5,6 +5,8 @@ html {
 	font-family: monospace, monospace;
 	font-size: min(max(1em, 1.3vw), 1.5em);
 	line-height: 1.7;
+    color: #212121;
+    background-color: #fafafa;
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -14,7 +16,6 @@ h1,h2,h3,h4,h5,h6 {
 p,ul,ol {
   margin-top: 1.5em;
   margin-bottom: 1.5em;
-  color: #1d1d1d;
   font-family: sans-serif;
 }
 

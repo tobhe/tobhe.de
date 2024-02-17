@@ -6,6 +6,8 @@ body {
     text-align: center;
     width: 100%;
     margin: 0;
+    color: #212121;
+    background-color: #fafafa;
 }
 
 body#keys {
