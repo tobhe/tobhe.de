@@ -2,7 +2,7 @@ html {
 	max-width: 88ch;
 	padding: 3em 1em;
 	margin: auto;
-	font-family: sans-serif;
+	font-family: monospace, monospace;
 	font-size: min(max(1em, 1.3vw), 1.5em);
 	line-height: 1.7;
 }
@@ -33,7 +33,6 @@ pre {
   margin-right: 1em;
   white-space: pre-wrap;
   width: fit-content;
-  font-family: monospace;
 }
 
 #footnote {
