@@ -1,15 +1,15 @@
 html {
-	max-width: 88ch;
-	padding: 3em 1em;
-	margin: auto;
-	font-family: monospace, monospace;
-	font-size: min(max(1em, 1.3vw), 1.5em);
-	line-height: 1.7;
+    max-width: 88ch;
+    padding: 3em 1em;
+    margin: auto;
+    font-family: monospace, monospace;
+    line-height: 1.7;
 }
 
 body {
     color: #212121;
     background-color: #fafafa;
+    font-size: calc(18px + 0.390625vw); 
 }
 
 h1,h2,h3,h4,h5,h6 {
