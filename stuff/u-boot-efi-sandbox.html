@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="ascii">
+  <link rel="stylesheet" href="style.css">
+  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+</head>
+<body id="keys">
+
+<img src="u-boot.svg"/>
+
+<h1>Testing UEFI apps in the U-Boot sandbox</h1>
+
+<ol>
+	<li><a href="#top1">Building the U-Boot sandbox</a></li>
+	<li><a href="#top2">Running an UEFI binary</a></li>
+	<li><a href="#sources">Sources</a></li>
+</ol>
+
+<p>
+This is a neat trick I learnt recently while experimenting with building a
+small EFI bootloader shim.
+Most guides will recommend testing using qemu and EDK2, but there
+actually is an even simpler way to test (some) EFI applications entirely
+without qemu or rebooting.
+
+<p>
+U-Boot can be compiled as a simple user-space Linux executable using the
+"sandbox" pseudo-architecture. This is mostly used in the U-Boot test suite but
+we can also use it as a simple user-space EFI test environment.
+Obviously only the UEFI subset supported by U-boot will work.
+
+<h2 id="top1">Building the U-Boot sandbox</h2>
+
+<p>
+Building the sandbox binary is as easy as fetching the source code from
+<a href="https://github.com/u-boot/u-boot">
+  <em>https://github.com/u-boot/u-boot</em>
+</a>, selecting the Sandbox configuration and building the binary via:
+
+<pre>
+$ make sandbox_defconfig all
+</pre>
+
+<p>
+The resulting <b>u-boot</b> file is a regular ELF Linux binary.
+Running it with <b>-h</b> gives us a list of supported command line options.
+
+<pre>
+$ ./u-boot -h
+U-Boot 2024.07-rc2 (May 19 2024 - 17:27:46 +0200)
+
+u-boot, a command line test interface to U-Boot
+
+Usage: u-boot [options]
+Options:
+      --autoboot_keyed           Allow keyed autoboot
+  -b, --boot                     Run distro boot commands
+  -c, --command          &ltarg&gt   Execute U-Boot command
+  -d, --fdt              &ltarg&gt   Specify U-Boot's control FDT
+  -D, --default_fdt              Use the default u-boot.dtb control FDT in U-Boot directory
+  -h, --help                     Display help
+  -i, --interactive              Enter interactive mode
+  -j, --jump             &ltarg&gt   Jumped from previous U-Boot
+  -k, --select_unittests &ltarg&gt   Select unit tests to run
+  -K, --double_lcd               Double the LCD display size in each direction
+  -l, --show_lcd                 Show the sandbox LCD display
+  -L, --log_level        &ltarg&gt   Set log level (0=panic, 7=debug)
+  -m, --memory           &ltarg&gt   Read/write ram_buf memory contents from file
+  -n, --ignore_missing           Ignore missing state on read
+  -p, --program          &ltarg&gt   U-Boot program name
+  -r, --read                     Read the state FDT on startup
+      --rm_memory                Remove memory file after reading
+  -s, --state            &ltarg&gt   Specify the sandbox state FDT
+  -S, --signals                  Handle signals (such as SIGSEGV) in sandbox
+  -t, --terminal         &ltarg&gt   Set terminal to raw/cooked mode
+  -T, --test_fdt                 Use the test.dtb control FDT in U-Boot directory
+  -u, --unittests                Run unit tests
+  -v, --verbose                  Show test output
+  -w, --write                    Write state FDT on exit
+</pre>
+
+<p>
+More info on sandbox mode and other interesting configuration options can be
+found in the official U-Boot documentation at <a href="#ubootsandbox">[1]</a>.
+
+<h2 id=top2>Running an UEFI binary</h2>
+
+<p>
+Running the binary without arguments allows us to access a regular U-Boot shell,
+load files and execute them via UEFI.
+The last missing puzzle piece is getting the binary from the host file system
+into U-Boot. For this we can use the host interface documented at
+<a href="#uboothost">[2]</a>.
+
+<p>
+<b>host load</b> allows as to load a file from the host file system directly
+into U-Boot's address space.
+The easiest way to load and execute a binary is loading it to the pre-defined
+<b>kernel_addr_r</b> address and then executing it via <b>bootefi</b>.
+
+<p>
+For simplicity we use the <b>helloworld.efi</b> application that ships
+with U-Boot:
+
+<pre>
+=> host load hostfs - $kernel_addr_r lib/efi_loader/helloworld.efi
+5632 bytes read in 0 ms
+=> bootefi $kernel_addr_r
+No EFI system partition
+No EFI system partition
+Failed to persist EFI variables
+Missing TPMv2 device for EFI_TCG_PROTOCOL
+Missing RNG device for EFI_RNG_PROTOCOL
+Booting /lib\efi_loader\helloworld.efi
+Hello, world!
+Running on UEFI 2.10
+Have ACPI 2.0 table
+Load options: <none>
+File path: /lib\efi_loader\helloworld.efi
+Missing device handle
+=>
+</pre>
+
+<p>
+And there we have our <em>"Hello, world!"</em>. Of course we can also run more
+complex applications than that as long as they work in U-Boot.
+Even graphical EFI apps should not be a problem thanks to built-in SDL support.
+
+<p>
+Finally, to make things even easier we can use the <b>-c</b> flag to pass
+those commands directly to u-boot and skip the interactive session entirely:
+
+<pre>
+$ ./u-boot -c "host load hostfs - \$kernel_addr_r lib/efi_loader/helloworld.efi; bootefi \$kernel_addr_r"
+</pre>
+
+<hr>
+
+<h3 id="sources">Sources</h3>
+  <a name="ubootsandbox" id=footnote href=https://docs.u-boot.org/en/v2021.04/arch/sandbox.html>
+    [1] U-Boot - Sandbox Documentation
+  </a>
+<br>
+  <a name="uboothost" id=footnote href=https://github.com/u-boot/u-boot/blob/master/doc/usage/cmd/host.rst>
+    [2] U-Boot - host command
+  </a>
+
+<footer>
+<hr>
+<a href=https://tobhe.de/stuff>Index</a>
+| Code:
+<a href=https://github.com/tobhe/tobhe.de>https://github.com/tobhe/tobhe.de</a>
+| Content under
+<a href=https://creativecommons.org/licenses/by/4.0/legalcode>CC-BY-4.0</a>
+</footer>
+
+</body>
+</html>
