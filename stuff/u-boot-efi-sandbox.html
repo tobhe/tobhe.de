@@ -22,13 +22,12 @@ This is a neat trick I learnt recently while experimenting with building a
 small EFI bootloader shim.
 Most guides will recommend testing using qemu and EDK2, but there
 actually is an even simpler way to test (some) EFI applications entirely
-without qemu or rebooting.
+without qemu, dedicated test hardware or constant rebooting.
 
 <p>
 U-Boot can be compiled as a simple user-space Linux executable using the
-"sandbox" pseudo-architecture. This is mostly used in the U-Boot test suite but
-we can also use it as a simple user-space EFI test environment.
-Obviously only the UEFI subset supported by U-boot will work.
+"sandbox" pseudo-architecture. This is mostly intended for the U-Boot test
+suite but we can also use it as a simple user-space UEFI test environment.
 
 <h2 id="top1">Building the U-Boot sandbox</h2>
 
@@ -124,7 +123,7 @@ Missing device handle
 
 <p>
 And there we have our <em>"Hello, world!"</em>. Of course we can also run more
-complex applications than that as long as they work in U-Boot.
+complex applications as long as they work in U-Boot.
 Even graphical EFI apps should not be a problem thanks to built-in SDL support.
 
 <p>
